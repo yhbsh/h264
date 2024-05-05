@@ -1,0 +1,2 @@
+- Advanced Video Coding (H.264): https://en.wikipedia.org/wiki/Advanced_Video_Coding
+- OpenGL: https://en.wikipedia.org/wiki/OpenGL
