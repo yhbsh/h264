@@ -14,7 +14,7 @@ video.h264: encode
 	./encode
 
 encode: encode.c
-	cc -O3 $(INCLUDES) encode.c -o encode $(LIBS) $(FRAMEWORKS)
+	cc -std=c17 -O3 $(INCLUDES) encode.c -o encode $(LIBS) $(FRAMEWORKS)
 
 clean:
 	rm -f encode render
