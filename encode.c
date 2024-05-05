@@ -14,6 +14,9 @@ void encode_fractal_noise_vertex(int frame, x264_picture_t pic_in);
 void encode_polar_coordinate_color_cycling(int frame, x264_picture_t pic_in);
 void encode_swirling_vortex(int frame, x264_picture_t pic_in);
 void encode_fractal_noise_vertex2(int frame, x264_picture_t pic_in);
+void encode_water_effect(int frame, x264_picture_t pic_in);
+void encode_neon_glow_effect(int frame, x264_picture_t pic_in);
+
 
 int main() {
     int fps = 5;
@@ -43,8 +46,10 @@ int main() {
     for (int i = 0; i < num_frames; i++) {
         //encode_fractal_noise_vertex(i, pic_in);
         //encode_swirling_vortex(i, pic_in);
-        encode_polar_coordinate_color_cycling(i, pic_in);
+        //encode_polar_coordinate_color_cycling(i, pic_in);
         //encode_fractal_noise_vertex2(i, pic_in);
+        //encode_water_effect(i, pic_in);
+        encode_neon_glow_effect(i, pic_in);
 
         x264_nal_t* nals;
         int i_nal;
@@ -178,6 +183,64 @@ void encode_fractal_noise_vertex2(int frame, x264_picture_t pic_in) {
             double v_wave = complex_wave(-cx, -cy, -color_shift);
             u_plane[x] = 128 + (int)(127 * cos(u_wave));
             v_plane[x] = 128 + (int)(127 * sin(v_wave));
+        }
+    }
+}
+
+void encode_water_effect(int frame, x264_picture_t pic_in) {
+    const double frequency_base = 0.05;
+    const double phase_shift = frame * 0.03;
+    const double color_shift = frame * 0.02;
+
+    double (^modulate_intensity) (double, double, double) = ^double (double radius, double angle, double phase) {
+        return 128 + 127 * sin(radius * frequency_base + angle + phase);
+    };
+
+    double (^complex_wave) (int, int, double) = ^(int x, int y, double phase_shift) {
+        double local_radius = sqrt(x * x + y * y);
+        double local_angle = atan2(y, x);
+        return modulate_intensity(local_radius, local_angle, phase_shift);
+    };
+
+    for (int y = 0; y < HEIGHT / 2; y++) {
+        uint8_t* u_plane = pic_in.img.plane[1] + y * pic_in.img.i_stride[1];
+        uint8_t* v_plane = pic_in.img.plane[2] + y * pic_in.img.i_stride[2];
+        for (int x = 0; x < WIDTH / 2; x++) {
+            int cx = x - WIDTH / 4;
+            int cy = y - HEIGHT / 4;
+            double u_wave = complex_wave(cx, cy, color_shift);
+            double v_wave = complex_wave(-cx, -cy, -color_shift);
+            u_plane[x] = 128 + (int)(127 * cos(u_wave));
+            v_plane[x] = 128 + (int)(127 * sin(v_wave));
+        }
+    }
+}
+
+void encode_neon_glow_effect(int frame, x264_picture_t pic_in) {
+    const double frequency_base = 0.08;
+    const double phase_shift = frame * 0.05;
+    const double color_shift = frame * 0.04;
+
+    double (^modulate_intensity) (double, double, double) = ^double (double radius, double angle, double phase) {
+        return 128 + 127 * sin(radius * frequency_base + angle + phase);
+    };
+
+    double (^complex_wave) (int, int, double) = ^(int x, int y, double phase_shift) {
+        double local_radius = sqrt(x * x + y * y);
+        double local_angle = atan2(y, x);
+        return modulate_intensity(local_radius, local_angle, phase_shift);
+    };
+
+    for (int y = 0; y < HEIGHT / 2; y++) {
+        uint8_t* u_plane = pic_in.img.plane[1] + y * pic_in.img.i_stride[1];
+        uint8_t* v_plane = pic_in.img.plane[2] + y * pic_in.img.i_stride[2];
+        for (int x = 0; x < WIDTH / 2; x++) {
+            int cx = x - WIDTH / 4;
+            int cy = y - HEIGHT / 4;
+            double u_wave = complex_wave(cx, cy, color_shift);
+            double v_wave = complex_wave(-cx, -cy, -color_shift);
+            u_plane[x] = 128 + (int)(127 * sin(u_wave));
+            v_plane[x] = 128 + (int)(127 * cos(v_wave));
         }
     }
 }
