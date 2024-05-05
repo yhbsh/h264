@@ -5,9 +5,16 @@
 #include <math.h>
 #include <x264.h>
 
+static int WIDTH = 640;
+static int HEIGHT = 480;
+
+
+
+void encode_fractal_noise_vertex(int frame, x264_picture_t pic_in);
+void encode_polar_coordinate_color_cycling(int frame, x264_picture_t pic_in);
+void encode_swirling_vortex(int frame, x264_picture_t pic_in);
+
 int main() {
-    int width = 640;
-    int height = 480;
     int fps = 5;
     int num_frames = 200;
 
@@ -18,8 +25,8 @@ int main() {
 
     x264_param_default_preset(&param, "veryfast", "zerolatency");
     param.i_csp = X264_CSP_I420;
-    param.i_width = width;
-    param.i_height = height;
+    param.i_width = WIDTH;
+    param.i_height = HEIGHT;
     param.i_fps_num = fps;
     param.i_fps_den = 1;
     param.i_keyint_max = fps;
@@ -29,29 +36,14 @@ int main() {
     encoder = x264_encoder_open(&param);
     h264_file = fopen("video.h264", "wb");
 
-    x264_picture_alloc(&pic_in, X264_CSP_I420, width, height);
+    x264_picture_alloc(&pic_in, X264_CSP_I420, WIDTH, HEIGHT);
     pic_in.i_type = X264_TYPE_AUTO;
 
     for (int i = 0; i < num_frames; i++) {
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                double angle = atan2(y - height / 2, x - width / 2);
-                double radius = sqrt(pow(x - width / 2, 2) + pow(y - height / 2, 2));
-                double intensity = 128 + 127 * sin(radius * 0.05 + angle * 3 + i * 0.1);
-                pic_in.img.plane[0][x + y * width] = (int)intensity;
-            }
-            if (y < height / 2) {
-                uint8_t* u_plane = pic_in.img.plane[1] + y * pic_in.img.i_stride[1];
-                uint8_t* v_plane = pic_in.img.plane[2] + y * pic_in.img.i_stride[2];
-                for (int x = 0; x < width / 2; x++) {
-                    double angle = atan2(y - height / 4, x - width / 4);
-                    double radius = sqrt(pow(x - width / 4, 2) + pow(y - height / 4, 2));
-                    u_plane[x] = 128 + (int)(127 * sin(radius * 0.1 + i * 0.05));
-                    v_plane[x] = 128 + (int)(127 * cos(angle * 5 + i * 0.03));
-                }
-            }
-        }
-    
+        //encode_fractal_noise_vertex(i, pic_in);
+        //encode_swirling_vortex(i, pic_in);
+        encode_polar_coordinate_color_cycling(i, pic_in);
+
         x264_nal_t* nals;
         int i_nal;
         x264_encoder_encode(encoder, &nals, &i_nal, &pic_in, &pic_out);
@@ -74,4 +66,77 @@ int main() {
     fclose(h264_file);
 
     return 0;
+}
+
+void encode_polar_coordinate_color_cycling(int frame, x264_picture_t pic_in) {
+        for (int y = 0; y < HEIGHT; y++) {
+            for (int x = 0; x < WIDTH; x++) {
+                double angle = atan2(y - HEIGHT / 2, x - WIDTH / 2);
+                double radius = sqrt(pow(x - WIDTH / 2, 2) + pow(y - HEIGHT / 2, 2));
+                double intensity = 128 + 127 * sin(radius * 0.05 + angle * 3 + frame * 0.1);
+                pic_in.img.plane[0][x + y * WIDTH] = (int)intensity;
+            }
+            if (y < HEIGHT / 2) {
+                uint8_t* u_plane = pic_in.img.plane[1] + y * pic_in.img.i_stride[1];
+                uint8_t* v_plane = pic_in.img.plane[2] + y * pic_in.img.i_stride[2];
+                for (int x = 0; x < WIDTH / 2; x++) {
+                    double angle = atan2(y - HEIGHT / 4, x - WIDTH / 4);
+                    double radius = sqrt(pow(x - WIDTH / 4, 2) + pow(y - HEIGHT / 4, 2));
+                    u_plane[x] = 128 + (int)(127 * sin(radius * 0.1 + frame * 0.05));
+                    v_plane[x] = 128 + (int)(127 * cos(angle * 5 + frame * 0.03));
+                }
+            }
+        }
+}
+
+void encode_fractal_noise_vertex(int frame, x264_picture_t pic_in) {
+    for (int y = 0; y < HEIGHT; y++) {
+        for (int x = 0; x < WIDTH; x++) {
+            double angle = atan2(y - HEIGHT / 2, x - WIDTH / 2);
+            double radius = sqrt(pow(x - WIDTH / 2, 2) + pow(y - HEIGHT / 2, 2));
+            double phase = frame * 0.02;
+            double frequency = 0.1 * (radius + 1);
+            double intensity = 128 + 127 * sin(frequency * radius + 5 * angle + phase);
+            intensity += 127 * sin(3 * frequency * (radius * 0.5) - 3 * angle + phase);
+            intensity = intensity / 2;
+            pic_in.img.plane[0][x + y * WIDTH] = (int)intensity;
+        }
+        if (y < HEIGHT / 2) {
+            uint8_t* u_plane = pic_in.img.plane[1] + y * pic_in.img.i_stride[1];
+            uint8_t* v_plane = pic_in.img.plane[2] + y * pic_in.img.i_stride[2];
+            for (int x = 0; x < WIDTH / 2; x++) {
+                double angle = atan2(y - HEIGHT / 4, x - WIDTH / 4);
+                double radius = sqrt(pow(x - WIDTH / 4, 2) + pow(y - HEIGHT / 4, 2));
+                double phase = frame * 0.03;
+                double frequency = 0.15 * (radius + 1); // Higher frequency for color
+                u_plane[x] = 128 + (int)(127 * cos(frequency * radius - 4 * angle + phase));
+                v_plane[x] = 128 + (int)(127 * cos(frequency * radius + 4 * angle + phase));
+            }
+        }
+    }
+}
+
+void encode_swirling_vortex(int frame, x264_picture_t pic_in) {
+    for (int y = 0; y < HEIGHT; y++) {
+        for (int x = 0; x < WIDTH; x++) {
+            double angle = atan2(y - HEIGHT / 2, x - WIDTH / 2);
+            double radius = sqrt(pow(x - WIDTH / 2, 2) + pow(y - HEIGHT / 2, 2));
+            double wave = (radius * 0.05) + (frame * 0.15);
+            double swirl = angle + wave;
+            double intensity = 128 + 127 * sin(swirl * 2);
+            pic_in.img.plane[0][x + y * WIDTH] = (int)intensity;
+        }
+        if (y < HEIGHT / 2) {
+            uint8_t* u_plane = pic_in.img.plane[1] + y * pic_in.img.i_stride[1];
+            uint8_t* v_plane = pic_in.img.plane[2] + y * pic_in.img.i_stride[2];
+            for (int x = 0; x < WIDTH / 2; x++) {
+                double angle = atan2(y - HEIGHT / 4, x - WIDTH / 4);
+                double radius = sqrt(pow(x - WIDTH / 4, 2) + pow(y - HEIGHT / 4, 2));
+                double wave = (radius * 0.1) + (frame * 0.1);
+                double swirl = angle + wave;
+                u_plane[x] = 128 + (int)(127 * sin(swirl * 3));
+                v_plane[x] = 128 + (int)(127 * cos(swirl * 4));
+            }
+        }
+    }
 }
