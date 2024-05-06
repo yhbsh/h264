@@ -5,8 +5,8 @@
 #include <math.h>
 #include <x264.h>
 
-static int WIDTH = 640;
-static int HEIGHT = 480;
+#define WIDTH  640
+#define HEIGHT 480
 
 
 
@@ -16,7 +16,7 @@ void encode_swirling_vortex(int frame, x264_picture_t pic_in);
 void encode_fractal_noise_vertex2(int frame, x264_picture_t pic_in);
 void encode_water_effect(int frame, x264_picture_t pic_in);
 void encode_neon_glow_effect(int frame, x264_picture_t pic_in);
-
+void encode_game_of_life(int frame, x264_picture_t pic_in);
 
 int main() {
     int fps = 5;
@@ -49,7 +49,8 @@ int main() {
         //encode_polar_coordinate_color_cycling(i, pic_in);
         //encode_fractal_noise_vertex2(i, pic_in);
         //encode_water_effect(i, pic_in);
-        encode_neon_glow_effect(i, pic_in);
+        //encode_neon_glow_effect(i, pic_in);
+        encode_game_of_life(i, pic_in);
 
         x264_nal_t* nals;
         int i_nal;
@@ -241,6 +242,46 @@ void encode_neon_glow_effect(int frame, x264_picture_t pic_in) {
             double v_wave = complex_wave(-cx, -cy, -color_shift);
             u_plane[x] = 128 + (int)(127 * sin(u_wave));
             v_plane[x] = 128 + (int)(127 * cos(v_wave));
+        }
+    }
+}
+
+void encode_game_of_life(int frame, x264_picture_t pic_in) {
+    static uint8_t current[HEIGHT / 2][WIDTH / 2];
+    static uint8_t next[HEIGHT / 2][WIDTH / 2];
+    int half_width = WIDTH / 2;
+    int half_height = HEIGHT / 2;
+
+    if (frame == 0) {
+        for (int y = 0; y < half_height; y++) {
+            for (int x = 0; x < half_width; x++) {
+                current[y][x] = (rand() % 2) * 255;
+            }
+        }
+    } else {
+        for (int y = 0; y < half_height; y++) {
+            for (int x = 0; x < half_width; x++) {
+                int live_neighbors = 0;
+                for (int dy = -1; dy <= 1; dy++) {
+                    for (int dx = -1; dx <= 1; dx++) {
+                        if (dx == 0 && dy == 0) continue;
+                        int ny = y + dy, nx = x + dx;
+                        if (ny >= 0 && ny < half_height && nx >= 0 && nx < half_width) {
+                            live_neighbors += (current[ny][nx] == 255) ? 1 : 0;
+                        }
+                    }
+                }
+                next[y][x] = (current[y][x] == 255 && (live_neighbors < 2 || live_neighbors > 3)) ? 0 :
+                             ((current[y][x] == 0 && live_neighbors == 3) ? 255 : current[y][x]);
+            }
+        }
+        memcpy(current, next, sizeof(current));
+    }
+
+    for (int y = 0; y < half_height; y++) {
+        uint8_t* u_plane = pic_in.img.plane[1] + y * pic_in.img.i_stride[1];
+        for (int x = 0; x < half_width; x++) {
+            u_plane[x] = current[y][x];
         }
     }
 }
