@@ -20,4 +20,4 @@ decode: decode.cpp
 	c++ -std=c++17 -I /opt/homebrew/include -O3 decode.cpp -o decode -L /opt/homebrew/lib -lopenh264
 
 clean:
-	rm -f encode render
+	rm -f encode render decode
