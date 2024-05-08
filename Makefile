@@ -1,5 +1,5 @@
-INCLUDES=$(shell pkg-config --cflags libavcodec libavformat x264 glfw3)
-LIBS=$(shell pkg-config --libs libavcodec libavformat x264 glfw3)
+INCLUDES=$(shell pkg-config --cflags libavcodec glfw3)
+LIBS=$(shell pkg-config --libs libavcodec glfw3)
 FRAMEWORKS=-framework opengl
 
 all: play

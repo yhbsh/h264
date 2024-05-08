@@ -1,36 +1,36 @@
 #define GL_SILENCE_DEPRECATION
 #include <OpenGL/gl3.h>
 #include <GLFW/glfw3.h>
+
 #include <stdio.h>
+
 #include <libavcodec/avcodec.h>
 #include <libavutil/imgutils.h>
 
-const char *vert_src =
-    "#version 410\n"
-    "layout (location = 0) in vec2 position;\n"
-    "layout (location = 1) in vec2 texCoord;\n"
-    "out vec2 texCoordVarying;\n"
-    "void main() {\n"
-    "    gl_Position = vec4(position, 0.0, 1.0);\n"
-    "    texCoordVarying = texCoord;\n"
-    "}\n";
+const char *vert_src = "#version 410\n"
+                       "layout (location = 0) in vec2 position;\n"
+                       "layout (location = 1) in vec2 texCoord;\n"
+                       "out vec2 texCoordVarying;\n"
+                       "void main() {\n"
+                       "    gl_Position = vec4(position, 0.0, 1.0);\n"
+                       "    texCoordVarying = texCoord;\n"
+                       "}\n";
 
-const char *frag_src =
-    "#version 410\n"
-    "in vec2 texCoordVarying;\n"
-    "uniform sampler2D textureY;\n"
-    "uniform sampler2D textureU;\n"
-    "uniform sampler2D textureV;\n"
-    "out vec4 fragColor;\n"
-    "void main() {\n"
-    "    vec3 yuv;\n"
-    "    vec3 rgb;\n"
-    "    yuv.x = texture(textureY, texCoordVarying).r;\n"
-    "    yuv.y = texture(textureU, texCoordVarying).r - 0.5;\n"
-    "    yuv.z = texture(textureV, texCoordVarying).r - 0.5;\n"
-    "    rgb = mat3(1.0, 1.0, 1.0, 0.0, -0.344, 1.772, 1.402, -0.714, 0.0) * yuv;\n"
-    "    fragColor = vec4(rgb, 1.0);\n"
-    "}\n";
+const char *frag_src = "#version 410\n"
+                       "in vec2 texCoordVarying;\n"
+                       "uniform sampler2D textureY;\n"
+                       "uniform sampler2D textureCb;\n"
+                       "uniform sampler2D textureCr;\n"
+                       "out vec4 fragColor;\n"
+                       "void main() {\n"
+                       "    float y  = texture(textureY , texCoordVarying).r;\n"
+                       "    float cb = texture(textureCb, texCoordVarying).r - 0.5;\n"
+                       "    float cr = texture(textureCr, texCoordVarying).r - 0.5;\n"
+                       "    float r = y + (1.40200 * cr);\n"
+                       "    float g = y - (0.344 * cb) - (0.714 * cr);\n"
+                       "    float b = y + (1.770 * cb);\n"
+                       "    fragColor = vec4(r, g, b, 1.0);\n"
+                       "}\n";
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
@@ -64,11 +64,6 @@ int main(int argc, char* argv[]) {
     GLFWwindow *window = glfwCreateWindow(800, 600, "Window", NULL, NULL);
     glfwMakeContextCurrent(window);
 
-    const GLubyte* renderer = glGetString(GL_RENDERER);
-    const GLubyte* vendor = glGetString(GL_VENDOR);
-    const GLubyte* version = glGetString(GL_VERSION);
-    const GLubyte* glslVersion = glGetString(GL_SHADING_LANGUAGE_VERSION);
-    printf("Renderer: %s\nVendor: %s\nVersion: %s\nGLSL: %s\n", renderer, vendor, version, glslVersion);
     GLuint vert = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vert, 1, &vert_src, NULL);
     glCompileShader(vert);
@@ -85,10 +80,10 @@ int main(int argc, char* argv[]) {
     glLinkProgram(prog);
     glUseProgram(prog);
 
-    GLuint textureY, textureU, textureV;
+    GLuint textureY, textureCb, textureCr;
     glGenTextures(1, &textureY);
-    glGenTextures(1, &textureV);
-    glGenTextures(1, &textureU);
+    glGenTextures(1, &textureCr);
+    glGenTextures(1, &textureCb);
 
     GLfloat vertices[] = {
         // positions    // texture coords
@@ -114,9 +109,9 @@ int main(int argc, char* argv[]) {
     glEnableVertexAttribArray(texCoordAttrib); 
     glVertexAttribPointer(texCoordAttrib, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), (GLvoid*)(2 * sizeof(GLfloat)));
 
-    glUniform1i(glGetUniformLocation(prog, "textureY"), 0);
-    glUniform1i(glGetUniformLocation(prog, "textureU"), 1);
-    glUniform1i(glGetUniformLocation(prog, "textureV"), 2);
+    glUniform1i(glGetUniformLocation(prog, "textureY" ), 0);
+    glUniform1i(glGetUniformLocation(prog, "textureCb"), 1);
+    glUniform1i(glGetUniformLocation(prog, "textureCr"), 2);
 
     while (!feof(file)) {
         data_size = fread(inbuf, 1, sizeof(inbuf) - AV_INPUT_BUFFER_PADDING_SIZE, file);
@@ -151,13 +146,13 @@ int main(int argc, char* argv[]) {
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
                     glActiveTexture(GL_TEXTURE1);
-                    glBindTexture(GL_TEXTURE_2D, textureU);
+                    glBindTexture(GL_TEXTURE_2D, textureCb);
                     glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, frame->width / 2, frame->height / 2, 0, GL_RED, GL_UNSIGNED_BYTE, frame->data[1]);
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
                     glActiveTexture(GL_TEXTURE2);
-                    glBindTexture(GL_TEXTURE_2D, textureV);
+                    glBindTexture(GL_TEXTURE_2D, textureCr);
                     glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, frame->width / 2, frame->height / 2, 0, GL_RED, GL_UNSIGNED_BYTE, frame->data[2]);
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
