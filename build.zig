@@ -27,7 +27,7 @@ const programs = [5]Program{
     },
     .{
         .name = "encode_video_x265",
-        .libraries = &.{"x265"},
+        .libraries = &.{ "x265", "c++" },
     },
     .{
         .name = "decode_video",
