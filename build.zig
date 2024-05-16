@@ -12,29 +12,30 @@ const library_path = "./lib";
 const Program = struct {
     name: []const u8,
     libraries: []const []const u8,
-    frameworks: []const []const u8,
+    frameworks: []const []const u8 = &.{},
 };
 
-const programs = [4]Program{
+const programs = [5]Program{
     .{
         .name = "main",
         .libraries = &.{ "avcodec", "avformat", "avutil", "glfw3", "iconv", "z" },
         .frameworks = &.{ "OpenGL", "Cocoa", "IOKit", "CoreFoundation" },
     },
     .{
-        .name = "encode",
+        .name = "encode_video_x264",
         .libraries = &.{"x264"},
-        .frameworks = &.{},
+    },
+    .{
+        .name = "encode_video_x265",
+        .libraries = &.{"x265"},
     },
     .{
         .name = "decode_video",
         .libraries = &.{ "avcodec", "avutil", "iconv" },
-        .frameworks = &.{},
     },
     .{
         .name = "decode_audio",
         .libraries = &.{ "avcodec", "avutil", "iconv" },
-        .frameworks = &.{},
     },
 };
 
