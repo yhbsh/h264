@@ -47,9 +47,9 @@ int main(int argc, char* argv[]) {
     const AVCodec *codec = avcodec_find_decoder(AV_CODEC_ID_H264);
     AVCodecParserContext *parser_ctx = av_parser_init(codec->id);
     AVCodecContext *codec_ctx = avcodec_alloc_context3(codec);
-    avcodec_open2(codec_ctx, codec, NULL);
+    ret = avcodec_open2(codec_ctx, codec, NULL);
 
-    AVFrame *frame = av_frame_alloc();
+    AVFrame  *frame  = av_frame_alloc();
     AVPacket *packet = av_packet_alloc();
 
     FILE *file = fopen(argv[1], "rb");
@@ -115,8 +115,7 @@ int main(int argc, char* argv[]) {
 
     while (!feof(file)) {
         data_size = fread(inbuf, 1, sizeof(inbuf) - AV_INPUT_BUFFER_PADDING_SIZE, file);
-        if (!data_size)
-            break;
+        if (!data_size) break;
 
         memset(inbuf + data_size, 0, AV_INPUT_BUFFER_PADDING_SIZE);
         data = inbuf;

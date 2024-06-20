@@ -1,0 +1,57 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-c",
+      "-std=c17",
+      "-I",
+      "/opt/homebrew/include",
+      "-O3",
+      "-o",
+      "encode",
+      "encode.c"
+    ],
+    "directory": "/Users/home/dev/c/h264",
+    "file": "/Users/home/dev/c/h264/encode.c",
+    "output": "/Users/home/dev/c/h264/encode"
+  },
+  {
+    "arguments": [
+      "/usr/bin/cc",
+      "-c",
+      "-O3",
+      "-I/Users/home/code/include",
+      "-I/opt/homebrew/Cellar/glfw/3.4/include",
+      "-pthread",
+      "-framework",
+      "VideoToolbox",
+      "-framework",
+      "CoreFoundation",
+      "-framework",
+      "CoreMedia",
+      "-framework",
+      "CoreVideo",
+      "-framework",
+      "CoreServices",
+      "-pthread",
+      "-framework",
+      "VideoToolbox",
+      "-framework",
+      "CoreFoundation",
+      "-framework",
+      "CoreMedia",
+      "-framework",
+      "CoreVideo",
+      "-framework",
+      "CoreServices",
+      "-framework",
+      "opengl",
+      "-o",
+      "render",
+      "render.c"
+    ],
+    "directory": "/Users/home/dev/c/h264",
+    "file": "/Users/home/dev/c/h264/render.c",
+    "output": "/Users/home/dev/c/h264/render"
+  }
+]
