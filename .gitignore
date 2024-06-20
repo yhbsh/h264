@@ -2,3 +2,4 @@ encode
 render
 decode
 video.h264
+.cache/
