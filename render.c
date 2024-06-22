@@ -1,6 +1,6 @@
 #define GL_SILENCE_DEPRECATION
-#include <GLFW/glfw3.h>
 #include <OpenGL/gl3.h>
+#include <GLFW/glfw3.h>
 
 #include <stdio.h>
 
@@ -9,30 +9,35 @@
 
 #define BUFFER_SIZE 4096
 
-const char *vert_src = "#version 410\n"
-                       "layout (location = 0) in vec2 position;\n"
-                       "layout (location = 1) in vec2 texCoord;\n"
-                       "out vec2 texCoordVarying;\n"
-                       "void main() {\n"
-                       "    gl_Position = vec4(position, 0.0, 1.0);\n"
-                       "    texCoordVarying = texCoord;\n"
-                       "}\n";
+const char *vert_source = "#version 410\n"
+                          "layout (location = 0) in vec2 position;\n"
+                          "layout (location = 1) in vec2 texCoord;\n"
+                          "out vec2 texCoordVarying;\n"
+                          "void main() {\n"
+                          "    gl_Position = vec4(position, 0.0, 1.0);\n"
+                          "    texCoordVarying = texCoord;\n"
+                          "}\n";
 
-const char *frag_src = "#version 410\n"
-                       "in vec2 texCoordVarying;\n"
-                       "uniform sampler2D textureY;\n"
-                       "uniform sampler2D textureCb;\n"
-                       "uniform sampler2D textureCr;\n"
-                       "out vec4 fragColor;\n"
-                       "void main() {\n"
-                       "    float y  = texture(textureY , texCoordVarying).r;\n"
-                       "    float cb = texture(textureCb, texCoordVarying).r - 0.5;\n"
-                       "    float cr = texture(textureCr, texCoordVarying).r - 0.5;\n"
-                       "    float r = y + (1.40200 * cr);\n"
-                       "    float g = y - (0.344 * cb) - (0.714 * cr);\n"
-                       "    float b = y + (1.770 * cb);\n"
-                       "    fragColor = vec4(r, g, b, 1.0);\n"
-                       "}\n";
+const char *frag_source = "#version 410\n"
+                          "in vec2 texCoordVarying;\n"
+                          "uniform sampler2D textureY;\n"
+                          "uniform sampler2D textureCb;\n"
+                          "uniform sampler2D textureCr;\n"
+                          "out vec4 fragColor;\n"
+                          "void main() {\n"
+                          "    float y  = texture(textureY , texCoordVarying).r;\n"
+                          "    float cb = texture(textureCb, texCoordVarying).r - 0.5;\n"
+                          "    float cr = texture(textureCr, texCoordVarying).r - 0.5;\n"
+                          "    float r = y + (1.40200 * cr);\n"
+                          "    float g = y - (0.344 * cb) - (0.714 * cr);\n"
+                          "    float b = y + (1.770 * cb);\n"
+                          "    fragColor = vec4(r, g, b, 1.0);\n"
+                          "}\n";
+void glfw_key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (key == GLFW_KEY_Q) {
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+    }
+}
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
@@ -73,15 +78,16 @@ int main(int argc, char *argv[]) {
 
     GLFWwindow *window = glfwCreateWindow(800, 600, "Window", NULL, NULL);
     glfwMakeContextCurrent(window);
+    glfwSetKeyCallback(window, glfw_key_callback);
 
     GLuint vert = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vert, 1, &vert_src, NULL);
+    glShaderSource(vert, 1, &vert_source, NULL);
     glCompileShader(vert);
     GLint status;
     glGetShaderiv(vert, GL_COMPILE_STATUS, &status);
 
     GLuint frag = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(frag, 1, &frag_src, NULL);
+    glShaderSource(frag, 1, &frag_source, NULL);
     glCompileShader(frag);
 
     GLuint prog = glCreateProgram();
@@ -124,7 +130,9 @@ int main(int argc, char *argv[]) {
     glUniform1i(glGetUniformLocation(prog, "textureCb"), 1);
     glUniform1i(glGetUniformLocation(prog, "textureCr"), 2);
 
-    while (!feof(file)) {
+    do {
+        glfwPollEvents();
+
         data_size = fread(in_buf, 1, sizeof(in_buf) - AV_INPUT_BUFFER_PADDING_SIZE, file);
         if (!data_size) break;
 
@@ -167,14 +175,11 @@ int main(int argc, char *argv[]) {
                     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
                     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
                     glfwSwapBuffers(window);
-                    glfwPollEvents();
                 }
             }
         }
-    }
-
+    } while (!feof(file) && !glfwWindowShouldClose(window));
 
     fclose(file);
     av_parser_close(parser_context);
