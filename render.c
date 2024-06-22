@@ -1,11 +1,13 @@
 #define GL_SILENCE_DEPRECATION
-#include <OpenGL/gl3.h>
 #include <GLFW/glfw3.h>
+#include <OpenGL/gl3.h>
 
 #include <stdio.h>
 
 #include <libavcodec/avcodec.h>
 #include <libavutil/imgutils.h>
+
+#define BUFFER_SIZE 4096
 
 const char *vert_src = "#version 410\n"
                        "layout (location = 0) in vec2 position;\n"
@@ -32,29 +34,37 @@ const char *frag_src = "#version 410\n"
                        "    fragColor = vec4(r, g, b, 1.0);\n"
                        "}\n";
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <input file>\n", argv[0]);
         return -1;
     }
 
-    uint8_t inbuf[4096 + AV_INPUT_BUFFER_PADDING_SIZE];
-    uint8_t *data;
-    size_t data_size;
     int ret;
 
+    uint8_t  in_buf[BUFFER_SIZE + AV_INPUT_BUFFER_PADDING_SIZE];
+    uint8_t *data;
+    size_t   data_size;
 
-    const AVCodec *codec = avcodec_find_decoder(AV_CODEC_ID_H264);
-    AVCodecParserContext *parser_ctx = av_parser_init(codec->id);
-    AVCodecContext *codec_ctx = avcodec_alloc_context3(codec);
-    ret = avcodec_open2(codec_ctx, codec, NULL);
+    const AVCodec        *codec;
+    AVCodecParserContext *parser_context;
+    AVCodecContext       *codec_context;
+    AVFrame              *frame;
+    AVPacket             *packet;
 
-    AVFrame  *frame  = av_frame_alloc();
-    AVPacket *packet = av_packet_alloc();
+    FILE *file;
 
-    FILE *file = fopen(argv[1], "rb");
+    codec          = avcodec_find_decoder(AV_CODEC_ID_H264);
+    parser_context = av_parser_init(codec->id);
+    codec_context  = avcodec_alloc_context3(codec);
+    ret            = avcodec_open2(codec_context, codec, NULL);
 
-    glfwInit();
+    frame  = av_frame_alloc();
+    packet = av_packet_alloc();
+
+    file = fopen(argv[1], "rb");
+
+    ret = glfwInit();
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
@@ -85,8 +95,9 @@ int main(int argc, char* argv[]) {
     glGenTextures(1, &textureCr);
     glGenTextures(1, &textureCb);
 
+    // clang-format off
     GLfloat vertices[] = {
-        // positions    // texture coords
+        // positions    // texture coordinates
         -1.0,  1.0,     0.0, 0.0,
         -1.0, -1.0,     0.0, 1.0,
          1.0,  1.0,     1.0, 0.0,
@@ -114,27 +125,26 @@ int main(int argc, char* argv[]) {
     glUniform1i(glGetUniformLocation(prog, "textureCr"), 2);
 
     while (!feof(file)) {
-        data_size = fread(inbuf, 1, sizeof(inbuf) - AV_INPUT_BUFFER_PADDING_SIZE, file);
+        data_size = fread(in_buf, 1, sizeof(in_buf) - AV_INPUT_BUFFER_PADDING_SIZE, file);
         if (!data_size) break;
 
-        memset(inbuf + data_size, 0, AV_INPUT_BUFFER_PADDING_SIZE);
-        data = inbuf;
+        memset(in_buf + data_size, 0, AV_INPUT_BUFFER_PADDING_SIZE);
+        data = in_buf;
 
         while (data_size > 0) {
-            ret = av_parser_parse2(parser_ctx, codec_ctx, &packet->data, &packet->size, data, data_size, AV_NOPTS_VALUE, AV_NOPTS_VALUE, 0);
+            ret = av_parser_parse2(parser_context, codec_context, &packet->data, &packet->size, data, data_size, AV_NOPTS_VALUE, AV_NOPTS_VALUE, 0);
             data += ret;
             data_size -= ret;
 
             if (packet->size) {
-                ret = avcodec_send_packet(codec_ctx, packet);
+                ret = avcodec_send_packet(codec_context, packet);
 
                 while (ret >= 0) {
-                    ret = avcodec_receive_frame(codec_ctx, frame);
-                    if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
-                        break;
+                    ret = avcodec_receive_frame(codec_context, frame);
+                    if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) break;
 
                     const char *format = av_get_pix_fmt_name(frame->format);
-                    printf("number: %lld - format = %s\n", codec_ctx->frame_num, format);
+                    printf("number: %lld - format = %s\n", codec_context->frame_num, format);
 
                     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -167,8 +177,8 @@ int main(int argc, char* argv[]) {
 
 
     fclose(file);
-    av_parser_close(parser_ctx);
-    avcodec_free_context(&codec_ctx);
+    av_parser_close(parser_context);
+    avcodec_free_context(&codec_context);
     av_frame_free(&frame);
     av_packet_free(&packet);
     glfwTerminate();
