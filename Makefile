@@ -1,23 +1,16 @@
-INCLUDES=$(shell pkg-config --cflags libavcodec glfw3)
-LIBS=$(shell pkg-config --libs libavcodec glfw3)
-FRAMEWORKS=-framework opengl
+CFLAGS   := $(shell pkg-config --cflags libavcodec glfw3 openh264 x264)
+LDFLAGS  := $(shell pkg-config --libs   libavcodec glfw3 openh264 x264) -framework OpenGL
 
-all: play
+all: encode render decode
 
-play: render
-	./render ./video.h264
-
-render: render.c video.h264
-	cc -O3 $(INCLUDES) render.c -o render $(LIBS) $(FRAMEWORKS)
-
-video.h264: encode
-	./encode
+render: render.c
+	cc $(CFLAGS) render.c -o render $(LDFLAGS)
 
 encode: encode.c
-	cc -std=c17 -I /opt/homebrew/include -O3 encode.c -o encode -L /opt/homebrew/lib -lx264
+	cc $(CFLAGS) encode.c -o encode $(LDFLAGS)
 
 decode: decode.cpp
-	c++ -std=c++17 -I /opt/homebrew/include -O3 decode.cpp -o decode -L /opt/homebrew/lib -lopenh264
+	c++ $(CFLAGS) decode.cpp -o decode $(LDFLAGS)
 
 clean:
 	rm -f encode render decode
