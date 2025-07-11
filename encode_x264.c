@@ -46,7 +46,7 @@ int main() {
     for (int i = 0; i < num_frames; i++) {
         // encode_fractal_noise_vertex(i, pic_in);
         // encode_swirling_vortex(i, pic_in);
-        //encode_polar_coordinate_color_cycling(i, pic_in);
+        // encode_polar_coordinate_color_cycling(i, pic_in);
         // encode_fractal_noise_vertex2(i, pic_in);
         // encode_water_effect(i, pic_in);
         // encode_neon_glow_effect(i, pic_in);

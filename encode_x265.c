@@ -8,7 +8,6 @@ int main() {
     int height     = 1080;
     int frameCount = 10;
 
-    // Configure the encoder
     x265_param *param = x265_param_alloc();
     x265_param_default(param);
     param->bRepeatHeaders = 1;             // Write headers again with each keyframe
@@ -18,7 +17,6 @@ int main() {
     param->fpsNum         = 25;
     param->fpsDenom       = 1;
 
-    // Create the encoder
     x265_encoder *encoder = x265_encoder_open(param);
     if (!encoder) {
         fprintf(stderr, "Failed to open encoder!\n");
@@ -34,12 +32,10 @@ int main() {
     picture->stride[1] = width / 2;
     picture->stride[2] = width / 2;
 
-    // Fill the YUV planes with black (Y=0, U=128, V=128)
     memset(picture->planes[0], 0, width * height);
     memset(picture->planes[1], 128, width * height / 4);
     memset(picture->planes[2], 128, width * height / 4);
 
-    // Encode frames
     for (int i = 0; i < frameCount; i++) {
         x265_nal *nals       = NULL;
         uint32_t  nal_count  = 0;
@@ -52,14 +48,6 @@ int main() {
             printf("Encoded frame %d, size %d bytes\n", i + 1, frame_size);
         }
     }
-
-    // Clean up
-    x265_encoder_close(encoder);
-    x265_picture_free(picture);
-    free(picture->planes[0]);
-    free(picture->planes[1]);
-    free(picture->planes[2]);
-    x265_param_free(param);
 
     return 0;
 }
