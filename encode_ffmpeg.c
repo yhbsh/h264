@@ -83,30 +83,25 @@ int main(int argc, const char *argv[1]) {
         fflush(stdout);
         ret = av_frame_make_writable(frame);
         int x, y;
-        float time = i * 0.005; // Adjust this value to control animation speed
+        float time = i * 0.005;
 
-        // Y plane
         for (y = 0; y < frame->height; y++) {
             for (x = 0; x < frame->width; x++) {
                 float yValue                               = (float)y / frame->height;
                 float xValue                               = (float)x / frame->width;
-                float wave                                 = sin(yValue * 10 + time) * 0.1; // Creates a horizontal wave effect
+                float wave                                 = sin(yValue * 10 + time) * 0.1;
                 frame->data[0][y * frame->linesize[0] + x] = (uint8_t)(255 * (yValue + wave));
             }
         }
 
-        // Cb and Cr planes
         for (y = 0; y < frame->height / 2; y++) {
             for (x = 0; x < frame->width / 2; x++) {
                 float yValue = (float)y / ((float)frame->height / 2);
                 float xValue = (float)x / ((float)frame->width / 2);
 
-                // Cb (blue-difference)
-                float cbWave                               = cos(xValue * 10 + time) * 0.1; // Creates a vertical wave effect
+                float cbWave                               = cos(xValue * 10 + time) * 0.1;
                 frame->data[1][y * frame->linesize[1] + x] = (uint8_t)(128 + 127 * (xValue + cbWave));
-
-                // Cr (red-difference)
-                frame->data[2][y * frame->linesize[2] + x] = 128; // Constant value for simplicity
+                frame->data[2][y * frame->linesize[2] + x] = 128;
             }
         }
 
